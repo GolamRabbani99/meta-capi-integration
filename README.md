@@ -54,6 +54,37 @@ event = ServerEvent.create("Lead", user, reference="enquiry-2026-04-1187")
   `fbtrace_id` for auditability — never customer data. Logs are safe to
   ship to any aggregator.
 
+### What Meta actually receives
+
+Real output from `examples/send_lead_event.py` — every PII field is already
+a SHA-256 hash by the time the payload exists, and the `event_id` is
+deterministic so the browser Pixel and any HTTP retry produce the same one:
+
+```json
+{
+  "event_name": "Lead",
+  "event_time": 1781262028,
+  "event_id": "d1230cd8e52ad941f1bfef10852c8e52",
+  "action_source": "website",
+  "user_data": {
+    "em": "395ec5f334be0ab5b28568a1e7f6ed5ea80e443fb1ce3d803340586a3df46642",
+    "ph": "033134b911b137918338415ee3d20a064b24773d36a3b02e8b99fdd3fcd6b4cd",
+    "fn": "9e691cc3bf80c4491b1b0ff55880e453bbe335d562e1c75f341b4af7ad35934c",
+    "ln": "f3ef4d448ab0f90b3cbf0df52f5af87e7f3e2b66a169d272b8b7ebf0d290cfba",
+    "ct": "6089854c94ca5454b76be6752c562901a985f64c9a946f62976aeab593b83161",
+    "zp": "8e1490597899c08af62455101432b986115a0d95e5b10a5ad1e41f80e08f8950",
+    "client_ip_address": "203.0.113.7",
+    "client_user_agent": "Mozilla/5.0 (example)",
+    "fbp": "fb.1.1700000000000.1234567890"
+  },
+  "event_source_url": "https://example.com/enquiry/thank-you",
+  "custom_data": { "currency": "GBP", "value": 2000.0 }
+}
+```
+
+(IP, user agent and the `_fbp` cookie are sent unhashed per Meta's spec —
+they are matching signals, not identity fields.)
+
 ### Operational resilience (`client.py`)
 - Exponential backoff with jitter on HTTP 429 and Meta throttle codes
   (4, 17, 80004).
