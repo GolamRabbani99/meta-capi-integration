@@ -25,20 +25,7 @@ server restores attribution — but introduces two problems this repo solves:
 
 ## Architecture
 
-```
- Browser ──── Pixel event ───────────────┐
-                (event_id: abc123)       ▼
-                                   ┌──────────┐
- Your server ─ CAPI event ───────▶ │   Meta   │ ── deduplicates on
-   (this lib)  (event_id: abc123)  └──────────┘    matching event_id
-```
-
-```
- Raw PII ──▶ UserData.from_raw() ──▶ SHA-256 hashes only ──▶ payload ──▶ Meta
-             (the ONLY place                │
-              plaintext exists)             └──▶ logs contain event_ids
-                                                 and counts — never PII
-```
+![Architecture: event deduplication and GDPR hash-at-the-boundary](docs/architecture.svg)
 
 ## Key design decisions
 
@@ -82,6 +69,18 @@ pip install -r requirements.txt python-dotenv pytest
 cp .env.example .env        # add your Pixel ID + access token
 pytest tests/ -v            # run the unit tests
 python examples/send_lead_event.py
+```
+
+All 10 unit tests pass (hashing normalisation, deterministic dedup IDs,
+GDPR payload checks):
+
+```
+tests/test_capi.py::TestHashing::test_email_is_normalised_before_hashing PASSED
+tests/test_capi.py::TestHashing::test_uk_phone_national_to_international PASSED
+tests/test_capi.py::TestDeduplication::test_event_id_is_deterministic PASSED
+tests/test_capi.py::TestGdprPayload::test_no_plaintext_pii_in_payload PASSED
+...
+============================= 10 passed in 0.62s ==============================
 ```
 
 Use Meta Events Manager → **Test Events** and set `META_TEST_EVENT_CODE`
